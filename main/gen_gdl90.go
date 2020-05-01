@@ -31,11 +31,14 @@ import (
 	"sync"
 	"syscall"
 	"time"
-
 	"../uatparse"
 	humanize "github.com/dustin/go-humanize"
 	"github.com/ricochet2200/go-disk-usage/du"
+        "../goflying/ahrs"
+        "../buzzball"
 )
+
+const buzzball_tick_period = 100;  // ms/tick
 
 // https://www.faa.gov/nextgen/programs/adsb/Archival/
 // https://www.faa.gov/nextgen/programs/adsb/Archival/media/GDL90_Public_ICD_RevA.PDF
@@ -1648,6 +1651,11 @@ func main() {
 	//FIXME: Only do this if data logging is enabled.
 	initDataLog()
 
+        // Start the BuzzBall functionality
+        buzzball.BuzzBall_Init()
+        go updateBuzzBall_periodic()
+        defer buzzball.BuzzBall_Close()
+
 	// Start the AHRS sensor monitoring.
 	initI2CSensors()
 
@@ -1711,5 +1719,18 @@ func main() {
 	} else {
 		// wait indefinitely
 		select {}
+	}
+}
+
+func updateBuzzBall_periodic() {
+	ticker := time.NewTicker(buzzball_tick_period * time.Millisecond)
+
+	for {
+		<-ticker.C
+
+		var valid bool = mySituation.AHRSSlipSkid != ahrs.Invalid
+//                var valid bool = false;
+
+		buzzball.BuzzBall_Update(float64(buzzball_tick_period)/1000.0, valid, mySituation.AHRSSlipSkid);
 	}
 }
