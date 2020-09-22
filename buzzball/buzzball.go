@@ -4,7 +4,7 @@ package buzzball
 
 import (
 	"log";
-//        "math";
+        "math";
 )
 
 
@@ -34,15 +34,23 @@ func BuzzBall_Close() {
 }
 
 var totaltime float64 = 0
+const g = 9.8;  // m/s^2
+
+// Reference Frame:
+//   +Roll is bank to right
+//  -Slip/Skid bank to the right without right rudder (ball to the L)
+//   +Y means aircraft is accelerating to L (ball to the R)
+//  AccelY is -g*sin(SlipSkid)
 
 func BuzzBall_Update(dt float64, valid bool, slipskid float64) {
-//        totaltime += dt;
-//        flag := math.Mod(totaltime, 5) < 2
-//        log.Printf("xxxx %.3f %t %+.3f --- %.1f %t \n", dt, valid, slipskid, totaltime, flag);
+        totaltime += dt;
 
-        log.Printf("xxxx %.3f %t %+.3f \n", dt, valid, slipskid);
+        var accelY  = -g * math.Sin(slipskid * math.Pi / 180);
+        var ballPos = accelY * -math.Sqrt(3)/2; 
+
+        log.Printf("xxxx %.3f %t %+.3f %+.2f %+.2f \n", dt, valid, slipskid, accelY, ballPos);
 
         // Crudest of crude hacks to make the motors do their thing (not sure if this is flipped L/R yet)
-	SetMotor(MotorL, slipskid > +1)
-	SetMotor(MotorR, slipskid < -1)
+	SetMotor(MotorL, ballPos > +0.375);
+	SetMotor(MotorR, ballPos < -0.375);
 }
