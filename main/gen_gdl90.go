@@ -295,21 +295,24 @@ func makeOwnshipReport() bool {
 	// See p.16.
 	msg[0] = 0x0A // Message type "Ownship".
 
-	// Ownship Target Identify (see 3.5.1.2 of GDL-90 Specifications)
-	// First half of byte is 0 for 'No Traffic Alert'
-	// Second half of byte is 0 for 'ADS-B with ICAO'
-	msg[1] = 0x00 // Alert status, address type.
-
+	// Retrieve ICAO code from settings
 	code, _ := hex.DecodeString(globalSettings.OwnshipModeS)
-	if len(code) != 3 {
+
+	// Ownship Target Identify (see 3.5.1.2 of GDL-90 Specifications)
+	// First half of byte is 0 for Alert type of 'No Traffic Alert'
+	// Second half of byte is 0 for traffic type 'ADS-B with ICAO'
+	// Send 0x01 by default, unless ICAO is set, send 0x00
+	if (len(code) == 3 && code[0] != 0xF0 && code[0] != 0x00) {
+		msg[1] = 0x00 // ADS-B Out with ICAO
+		msg[2] = code[0] // Mode S address.
+		msg[3] = code[1] // Mode S address.
+		msg[4] = code[2] // Mode S address.
+	} else {
+		msg[1] = 0x01 // ADS-B Out with self-assigned code
 		// Reserved dummy code.
 		msg[2] = 0xF0
 		msg[3] = 0x00
 		msg[4] = 0x00
-	} else {
-		msg[2] = code[0] // Mode S address.
-		msg[3] = code[1] // Mode S address.
-		msg[4] = code[2] // Mode S address.
 	}
 
 	var tmp []byte
@@ -1100,6 +1103,7 @@ func getProductNameFromId(product_id int) string {
 }
 
 type settings struct {
+	DarkMode             bool
 	UAT_Enabled          bool
 	ES_Enabled           bool
 	Ping_Enabled         bool
@@ -1126,6 +1130,7 @@ type settings struct {
 	WiFiSecurityEnabled  bool
 	WiFiPassphrase       string
 	WiFiSmartEnabled     bool // "Smart WiFi" - disables the default gateway for iOS.
+	NoSleep              bool
 }
 
 type status struct {
@@ -1182,6 +1187,7 @@ var globalSettings settings
 var globalStatus status
 
 func defaultSettings() {
+	globalSettings.DarkMode = false
 	globalSettings.UAT_Enabled = true
 	globalSettings.ES_Enabled = true
 	globalSettings.GPS_Enabled = true
@@ -1200,6 +1206,7 @@ func defaultSettings() {
 	globalSettings.OwnshipModeS = "F00000"
 	globalSettings.DeveloperMode = false
 	globalSettings.StaticIps = make([]string, 0)
+	globalSettings.NoSleep = false
 }
 
 func readSettings() {
