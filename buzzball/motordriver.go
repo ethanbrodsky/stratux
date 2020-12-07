@@ -65,10 +65,10 @@ func MotorDriver_SetSpeed(motor int, speed float64) {
   
 	err := motordriver.SetPwm(motor_regs[motor].speed, 0, speedword)
 
-        log.Printf("SetPwm: %d %d \n", motor_regs[motor].speed, speedword);
+        log.Printf("xxxx SetPwm: %d %d \n", motor_regs[motor].speed, speedword);
 
 	if err != nil {
-		log.Printf("ERROR %s!", err)
+		log.Printf("xxxx ERROR %s!", err)
 	}
 }
 

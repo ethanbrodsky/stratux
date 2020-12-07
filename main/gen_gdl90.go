@@ -34,8 +34,8 @@ import (
 	"../uatparse"
 	humanize "github.com/dustin/go-humanize"
 	"github.com/ricochet2200/go-disk-usage/du"
-        "../goflying/ahrs"
-        "../buzzball"
+	"../goflying/ahrs"
+	"../buzzball"
 )
 
 const buzzball_tick_period = 100;  // ms/tick
@@ -1658,10 +1658,10 @@ func main() {
 	//FIXME: Only do this if data logging is enabled.
 	initDataLog()
 
-        // Start the BuzzBall functionality
-        buzzball.BuzzBall_Init()
-        go updateBuzzBall_periodic()
-        defer buzzball.BuzzBall_Close()
+	// Start the BuzzBall functionality
+	buzzball.BuzzBall_Init()
+	go updateBuzzBall_periodic()
+	defer buzzball.BuzzBall_Close()
 
 	// Start the AHRS sensor monitoring.
 	initI2CSensors()
