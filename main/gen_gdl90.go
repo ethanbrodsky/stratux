@@ -34,11 +34,13 @@ import (
 	"../uatparse"
 	humanize "github.com/dustin/go-humanize"
 	"github.com/ricochet2200/go-disk-usage/du"
-	"../goflying/ahrs"
-	"../buzzball"
+//	"../goflying/ahrs"
+//	"../buzzball"
+	"../stoldraglights"
 )
 
 const buzzball_tick_period = 100;  // ms/tick
+const stoldrag_tick_period = 100;  // ms/tick
 
 // https://www.faa.gov/nextgen/programs/adsb/Archival/
 // https://www.faa.gov/nextgen/programs/adsb/Archival/media/GDL90_Public_ICD_RevA.PDF
@@ -1658,10 +1660,17 @@ func main() {
 	//FIXME: Only do this if data logging is enabled.
 	initDataLog()
 
+/*	Disabled BuzzBall functionality for STOL Drag Lights
 	// Start the BuzzBall functionality
 	buzzball.BuzzBall_Init()
 	go updateBuzzBall_periodic()
 	defer buzzball.BuzzBall_Close()
+*/
+
+        // Start the STOL Drag Lights functionality
+	stoldraglights.StolDragLights_Init()
+	go updateStolDragLights_periodic()
+	defer stoldraglights.StolDragLights_Close()
 
 	// Start the AHRS sensor monitoring.
 	initI2CSensors()
@@ -1729,6 +1738,7 @@ func main() {
 	}
 }
 
+/*
 func updateBuzzBall_periodic() {
 	ticker := time.NewTicker(buzzball_tick_period * time.Millisecond)
 
@@ -1741,3 +1751,27 @@ func updateBuzzBall_periodic() {
 		buzzball.BuzzBall_Update(float64(buzzball_tick_period)/1000.0, valid, mySituation.AHRSSlipSkid);
 	}
 }
+*/
+
+func updateStolDragLights_periodic() {
+	ticker := time.NewTicker(stoldrag_tick_period * time.Millisecond)
+
+	for {
+		<-ticker.C
+
+		stoldraglights.StolDragLights_Update(
+		                                     float64(stoldrag_tick_period)/1000.0,
+		                                     mySituation.GPSGroundSpeed,
+		                                     float64(mySituation.GPSTrueCourse),
+		                                     mySituation.GPSTurnRate,
+		                                     //mySituation.GPSLastGPSTimeStratuxTime, 
+		                                     mySituation.AHRSPitch,
+		                                     mySituation.AHRSRoll,
+		                                     mySituation.AHRSGyroHeading,
+		                                     mySituation.AHRSTurnRate,
+		                                     mySituation.AHRSGLoad,
+		                                     mySituation.AHRSSlipSkid,
+		                                     mySituation.AHRSStatus);
+	}
+}
+
