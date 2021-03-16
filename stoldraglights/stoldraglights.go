@@ -1,15 +1,11 @@
 package stoldraglights
 
 import (
+	"fmt";
 	"log";
 	"math";
-	"../ws2811";
-)
-
-const (
-	ledPin        = 10
-	ledCount      = 4
-	ledBrightness = 255
+	ws281x "github.com/rpi-ws281x/rpi-ws281x-go";
+	"os/exec";
 )
 
 const (
@@ -19,47 +15,99 @@ const (
 	ColorOff   = 0x00000000
 )
 
-func LEDs_AllOff() {
+type wsType struct {
+	ws2811 *ws281x.WS2811
+}
+
+func (ws *wsType) init() error {
+	err := ws.ws2811.Init()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (ws *wsType) close() {
+	ws.ws2811.Fini()
+}
+
+func (ws *wsType) AllOff() {
 	for ii := 0; ii < ledCount; ii++ {
-		ws2811.SetLed(ii, ColorOff)
+		ws.ws2811.Leds(0)[ii] = ColorOff
 	}
 
-	ws2811.Render()
+	ws.ws2811.Render()
 }
 
-func LED_Red(fEnabled bool) {
+func (ws *wsType) SetRed(fEnabled bool) {
 	if (fEnabled) {
-		ws2811.SetLed(0, ColorRed)
+		ws.ws2811.Leds(0)[0] = ColorRed
 	} else {
-		ws2811.SetLed(0, ColorOff)
+		ws.ws2811.Leds(0)[0] = ColorOff
 	}
 }
 
-func LED_Green(fEnabled bool) {
+func (ws *wsType) SetGreen(fEnabled bool) {
 	if (fEnabled) {
-		ws2811.SetLed(1, ColorGreen)
+		ws.ws2811.Leds(0)[1] = ColorGreen
 	} else {
-		ws2811.SetLed(1, ColorOff)
+		ws.ws2811.Leds(0)[1] = ColorOff
 	}
+
 }
+
+func (ws *wsType) Render() {
+	ws.ws2811.Render()
+	ws.ws2811.Wait()
+}
+
+var ws *wsType
+
+const (
+	ledPin        = 10
+	ledCount      = 4
+	ledBrightness = 255
+)
 
 func StolDragLights_Init() {
+//DONE BY USER	defer StolDragLights_Close()
 
-	defer StolDragLights_Close()
+/*
+	opt := ws281x.DefaultOptions
+	opt.Channels[0].Brightness = ledBrightness
+	opt.Channels[0].LedCount   = ledCount
+	opt.Channels[0].GpioPin    = ledPin
 
-	err := ws2811.Init(ledPin, ledCount, ledBrightness)
+        log.Printf("xxx1 \n");
+
+	ws2811_new, err := ws281x.MakeWS2811(&opt)
 	if err != nil {
 		log.Println(err)
 	}
 
-//	LEDs_AllOff()
+        log.Printf("xxx2 \n");
 
+	ws := wsType{
+		ws2811: ws2811_new,
+	}
+
+        log.Printf("xxx3 \n");
+
+	err = ws.init()
+	if err != nil {
+		log.Println(err)
+	}
+
+        log.Printf("xxx4 \n");
+	
+//	ws.AllOff()
+*/
+        log.Printf("xxx5 \n");
 }
 
 func StolDragLights_Close() {
-
-	ws2811.Fini()
-
+//	ws.close()
 }
 
 var totaltime float64 = 0
@@ -82,14 +130,33 @@ func StolDragLights_Update(dt float64, gpsGroundSpeed float64, gpsTrueCourse flo
         var fFullStop = stoptime > 2
 
 	if (totaltime > 30) {
-//		LED_Green( fStopped )
-//        	LED_Red  ( fFullStop )
+//		ws.SetRed  ( fStopped )
+//        	ws.SetGreen( fFullStop )
+//		ws.Render()
+	}
+
+	bit_r := 0
+	bit_g := 0
+
+	if (fStopped) {
+		bit_r = 1
+	}
+
+	if (fFullStop) {
+		bit_g = 1
+	}
+
+        str := fmt.Sprintf("%d%d", bit_r, bit_g)
+        cmd := exec.Command("/usr/local/bin/ledset", str)
+        err := cmd.Start()
+	if err != nil {
+		log.Fatal(err)
 	}
 
         log.Printf(
-	           "StolDragLights %.1f %.1f * %.2f %.2f %.2f * %+.2f %+.2f %.2f  %+.2f %+.2f %+.2f  %d  %t %t %.1f \n", 
+	           "StolDragLights %.1f %.1f * %.2f %.2f %.2f * %+.2f %+.2f %.2f  %+.2f %+.2f %+.2f  %d  %t %t %.1f %s \n", 
 	           dt, totaltime, 
 	           gpsGroundSpeed, gpsTrueCourse, gpsTurnRate, /*gpsLastTime,*/
 	           ahrsPitch, ahrsRoll, ahrsHeading,   ahrsTurnRate, ahrsGLoad, ahrsSlipSkid,   ahrsStatus,
-	           fStopped, fFullStop, stoptime);
+	           fStopped, fFullStop, stoptime, str);
 }
